@@ -1,5 +1,7 @@
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Movies.API.Contracts;
+using Movies.API.Data;
 using Movies.API.Movies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<AppDbContext>(opts =>
+{
+    opts.UseNpgsql(builder.Configuration.GetConnectionString("postgresDb"));
+});
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddScoped<IMovieService, MovieService>();

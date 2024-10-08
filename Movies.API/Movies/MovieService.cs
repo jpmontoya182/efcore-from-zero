@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Movies.API.Contracts;
+using Movies.API.Data;
 using Movies.API.Validation;
 
 namespace Movies.API.Movies
@@ -7,12 +9,12 @@ namespace Movies.API.Movies
     public class MovieService : IMovieService
     {
         private readonly IValidator<Movie> _validator;
-        private readonly List<Movie> _movies = new();
+        private readonly AppDbContext _dbContext;
 
-
-        public MovieService(IValidator<Movie> validator)
+        public MovieService(IValidator<Movie> validator, AppDbContext dbContext)
         {
             _validator = validator;
+            _dbContext = dbContext;
         }
 
         public async Task<Result<Movie, ValidationFailed>> Create(Movie movie)
@@ -22,18 +24,23 @@ namespace Movies.API.Movies
             {
                 return new ValidationFailed(validationResult.Errors);
             }
-            _movies.Add(movie);
+
+            _dbContext.Movies.Add(movie);
+            await _dbContext.SaveChangesAsync();
+
             return movie;
         }
 
         public async Task<Movie?> GetById(Guid id)
         { 
-            return _movies.SingleOrDefault(x => x.Id  == id);
+            return await _dbContext.Movies.FindAsync(id);        
         }
 
         public async Task<IEnumerable<Movie>> GetAll()
         {
-            return _movies;
+            return await _dbContext.Movies
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Result<Movie?, ValidationFailed>> Update(Movie movie)
@@ -44,21 +51,16 @@ namespace Movies.API.Movies
                 return new ValidationFailed(validationResult.Errors);
             }
 
-            var existingMovie = await GetById(movie.Id);
-            if (existingMovie is null)
-            {
-                return default(Movie);
-            }
-
-            _movies.Remove(existingMovie);
-            _movies.Add(movie);
-            return movie;
-
+            _dbContext.Movies.Update(movie);
+            var result = await _dbContext.SaveChangesAsync();
+            return result > 0 ? movie : default(Movie);
         }
 
         public async Task<bool> DeleteById(Guid id)
-        { 
-            var result = _movies.RemoveAll(x => x.Id == id);
+        {
+            var result = await _dbContext.Movies
+                .Where(x => x.Id == id)
+                .ExecuteDeleteAsync();
             return result > 0;
         }
 
