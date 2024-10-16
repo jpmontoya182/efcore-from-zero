@@ -2,16 +2,17 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Movies.API.Contracts;
 using Movies.API.Data;
+using Movies.API.EndpointsDocumentation;
 using Movies.API.Extensions;
-using Movies.API.Movies;
 using Movies.API.Users;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(config => {
+builder.Services.AddSwaggerGen(config =>
+{
 
     config.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -24,15 +25,18 @@ builder.Services.AddSwaggerGen(config => {
     });
 
     config.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        { 
-            new OpenApiSecurityScheme
-            { 
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            }, new string[]{ }
-        }
-    });
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                }, new string[]{ }
+            }
+        });
+
+    config.OperationFilter<LocalDocsOperationFilter>();
 });
+
 builder.Services.AddControllers();
 // ****
 

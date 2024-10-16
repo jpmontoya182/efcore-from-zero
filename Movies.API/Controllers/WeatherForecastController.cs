@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Movies.API.EndpointsDocumentation;
 
 namespace Movies.API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    [Authorize]
     public class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries = new[]
@@ -20,8 +19,9 @@ namespace Movies.API.Controllers
             _logger = logger;
         }
 
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        [HttpGet("GetWeatherForecast")]
+        [DocumentationFileAttribute("Docs/GetHello.md")]
+        public IEnumerable<WeatherForecast> GetHello()
         {
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -30,6 +30,19 @@ namespace Movies.API.Controllers
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        [HttpGet("GetCurrentTime")]
+        [DocumentationFileAttribute("Docs/GetGoodbye.md")]
+        public IActionResult GetGoodbye()
+        {
+            return Ok(DateTime.UtcNow.ToLongTimeString());
+        }
+
+        [HttpGet("GetData")]
+        public IActionResult GetData()
+        {
+            return Ok("This is the result");
         }
     }
 }
