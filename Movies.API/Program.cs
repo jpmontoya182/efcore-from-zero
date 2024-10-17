@@ -1,7 +1,10 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Movies.API;
 using Movies.API.Data;
 using Movies.API.EndpointsDocumentation;
 using Movies.API.Extensions;
@@ -35,6 +38,7 @@ builder.Services.AddSwaggerGen(config =>
         });
 
     config.OperationFilter<LocalDocsOperationFilter>();
+
 });
 
 builder.Services.AddControllers();
@@ -56,6 +60,20 @@ builder.Services
 
 builder.Services.AddDbContext<AppDbContext>(opts =>
     opts.UseNpgsql(builder.Configuration.GetConnectionString("postgresDb")));
+
+// version configuration
+builder.Services.AddApiVersioning(options => {
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.DefaultApiVersion = new ApiVersion(1, 0); // major version, minor version
+    })
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV";
+        options.SubstituteApiVersionInUrl = true;
+    });
+builder.Services.ConfigureOptions<ConfigureSwaggerOptions>(); // Configuración personalizada
+
+
 // ****
 var app = builder.Build();
 
@@ -63,7 +81,15 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
+        }
+    });
+
     // ***
     app.ApplyMigrations();
 }
